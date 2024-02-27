@@ -20,22 +20,22 @@ export class WebsocketGateway implements OnGatewayConnection {
   constructor(private readonly socketService: WebsocketService) {}
 
   async handleConnection(socket: Socket): Promise<void> {
-    await this.socketService.handleConnect(socket, this.server);
+    await this.socketService.handleJoinRoom(socket, this.server);
   }
 
   handleDisconnect(socket: Socket): void {
-    this.socketService.handleDisconnect(socket, this.server);
+    this.socketService.handleLeaveRoom(socket, this.server);
   }
 
   @SubscribeMessage('sayInRoom')
-  handleSayHelloEvent(client: Socket, data: ISayInRoomPayload) {
+  handleSayHelloEvent(client: Socket, data: ISayInRoomPayload): void {
     this.server
       .to(client.handshake.query.roomId)
       .emit('roomEcho', { message: data.message, user: data.user });
   }
 
   @SubscribeMessage('madeChoice')
-  handleMadeChoiceEvent(client: Socket, data: IPlayerChoicePayload) {
+  handleMadeChoiceEvent(client: Socket, data: IPlayerChoicePayload): void {
     this.server.to(client.handshake.query.roomId).emit('getPlayerChoice', {
       choice: data.choice,
       userId: client.handshake.query.userId,
@@ -43,14 +43,14 @@ export class WebsocketGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage('endRound')
-  handleEndRoundEvent(client: Socket) {
+  handleEndRoundEvent(client: Socket): void {
     this.server.to(client.handshake.query.roomId).emit('getEndRound', {
       userId: client.handshake.query.userId,
     });
   }
 
   @SubscribeMessage('roundScore')
-  handleRoundScore(client: Socket, data: IRoundScorePayload) {
+  handleRoundScore(client: Socket, data: IRoundScorePayload): void {
     this.server.to(client.handshake.query.roomId).emit('getRoundScore', {
       userId: client.handshake.query.userId,
       score: data,
@@ -58,12 +58,12 @@ export class WebsocketGateway implements OnGatewayConnection {
   }
 
   @SubscribeMessage('leaveRoom')
-  async handleLeaveRoom(client: Socket) {
-    await this.socketService.handleDisconnect(client, this.server);
+  async handleLeaveRoom(client: Socket): Promise<void> {
+    await this.socketService.handleLeaveRoom(client, this.server);
   }
 
   @SubscribeMessage('joinRoom')
-  async handleJoinRoom(client: Socket) {
-    await this.socketService.handleConnect(client, this.server);
+  async handleJoinRoom(client: Socket): Promise<void> {
+    await this.socketService.handleJoinRoom(client, this.server);
   }
 }

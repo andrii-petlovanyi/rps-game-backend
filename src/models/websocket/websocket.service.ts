@@ -6,7 +6,7 @@ import { GameSessionService } from 'src/models/game-session/game-session.service
 export class WebsocketService {
   constructor(private readonly gameSessionService: GameSessionService) {}
 
-  async handleConnect(socket: Socket, server: Server): Promise<void> {
+  async handleJoinRoom(socket: Socket, server: Server): Promise<void> {
     const players = await this.gameSessionService.findAllPlayersByRoomId(
       socket.handshake.query.roomId as string,
       socket.handshake.query.userId as string,
@@ -24,7 +24,7 @@ export class WebsocketService {
     this.notifyOnJoinRoom(socket, server);
   }
 
-  async handleDisconnect(socket: Socket, server: Server): Promise<void> {
+  async handleLeaveRoom(socket: Socket, server: Server): Promise<void> {
     const session = await this.gameSessionService.deleteGameSession(socket.id);
     if (session) {
       socket.leave(session.roomId);
@@ -32,7 +32,7 @@ export class WebsocketService {
     this.notifyOnLeaveRoom(socket, server);
   }
 
-  private notifyOnJoinRoom(socket: Socket, server: Server) {
+  private notifyOnJoinRoom(socket: Socket, server: Server): void {
     server.to(socket.handshake.query.roomId).emit('userJoined', {
       message: `User ${socket.handshake.query.username} joined in room`,
       username: socket.handshake.query.username,
@@ -40,7 +40,7 @@ export class WebsocketService {
     });
   }
 
-  private notifyOnLeaveRoom(socket: Socket, server: Server) {
+  private notifyOnLeaveRoom(socket: Socket, server: Server): void {
     server.to(socket.handshake.query.roomId).emit('userLeft', {
       message: `User ${socket.handshake.query.username} leave room`,
       username: socket.handshake.query.username,
